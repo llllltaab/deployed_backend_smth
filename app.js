@@ -126,25 +126,48 @@ app.use((err, req, res, next) => {
     res.status(500).json({error: "Something went wrong"});
 })
 
-async function runIt() {
+const PORT = process.env.PORT || 3000;
+
+async function startServer() {
     try {
-
         await db.authenticate();
+        console.log("Database connected");
 
-        console.log("connection is stable");
-
+        // Creates the table if it does not exist
         await db.sync();
 
-        const PORT = process.env.PORT || 3000;
+        const taskCount = await Task.count();
+
+        // Only add the initial tasks when the table is empty
+        if (taskCount === 0) {
+            await Task.bulkCreate([
+                {
+                    title: "take out the garbage",
+                    completed: true
+                },
+                {
+                    title: "take the dog outside",
+                    completed: false
+                },
+                {
+                    title: "go to doctor, daily checkup",
+                    completed: false
+                },
+                {
+                    title: "cook dinner",
+                    completed: false
+                }
+            ]);
+
+            console.log("Initial tasks added");
+        }
 
         app.listen(PORT, () => {
             console.log(`Server is running on port ${PORT}`);
-        })
-
+        });
     } catch (err) {
-        console.log(err.message);
+        console.error("Startup error:", err);
     }
 }
 
-
-runIt();
+startServer();
